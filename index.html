@@ -46,7 +46,7 @@
 
         /* PDF 列印模式優化 */
         @media print {
-            header, footer, nav, button, .no-print {
+            header, footer, nav, button, .no-print, .bg-music-toggle {
                 display: none !important;
             }
             body {
@@ -74,13 +74,23 @@
 <body class="text-gray-800 antialiased min-h-screen flex flex-col">
 
 <div id="app" class="flex-grow flex flex-col h-full">
+    <!-- 背景音樂音軌 -->
+    <audio id="bgMusic" loop>
+        <source src="https://raw.githubusercontent.com/yafanliaoai/music/main/Coffee_Cooling_Down.mp3" type="audio/mpeg">
+    </audio>
+
     <!-- 導覽列 -->
     <header class="bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg text-white sticky top-0 z-50">
-        <div class="max-w-5xl mx-auto px-4 py-6 text-center">
+        <div class="max-w-5xl mx-auto px-4 py-6 text-center relative">
             <h1 class="text-2xl md:text-3xl font-black mb-1 tracking-wide">
                 <i class="fa-solid fa-cheese mr-2"></i>Who Moved My Cheese
             </h1>
             <p class="text-sm font-medium opacity-90">互動式英文閱讀學習平台</p>
+            
+            <!-- 背景音樂切換按鈕 -->
+            <button @click="toggleMusic" class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 p-3 rounded-full transition-all no-print bg-music-toggle" :title="isMusicPlaying ? '暫停音樂' : '播放音樂'">
+                <i class="fa-solid" :class="isMusicPlaying ? 'fa-music text-amber-200 animate-bounce' : 'fa-play-circle text-white'"></i>
+            </button>
         </div>
         
         <div class="flex overflow-x-auto no-scrollbar bg-orange-600/20 px-2 justify-start md:justify-center">
@@ -345,7 +355,7 @@
 </div>
 
 <script>
-const { createApp, ref, computed, watch, nextTick } = Vue;
+const { createApp, ref, computed, watch, nextTick, onMounted } = Vue;
 
 const app = createApp({
     setup() {
@@ -358,6 +368,7 @@ const app = createApp({
         const quizSubmitted = ref(false);
         const score = ref(0);
         const showStats = ref(false);
+        const isMusicPlaying = ref(false);
         let chartInstance = null;
         let printChartInstance = null;
 
@@ -444,6 +455,22 @@ const app = createApp({
 
         const resetQuiz = () => { quizAnswers.value = {}; quizSubmitted.value = false; score.value = 0; showStats.value = false; };
 
+        // 音樂控制
+        const toggleMusic = () => {
+            const audio = document.getElementById('bgMusic');
+            if (isMusicPlaying.value) {
+                audio.pause();
+            } else {
+                audio.play().catch(e => console.log("等待使用者互動以開始播放音樂"));
+            }
+            isMusicPlaying.value = !isMusicPlaying.value;
+        };
+
+        onMounted(() => {
+            const audio = document.getElementById('bgMusic');
+            audio.volume = 0.5; // 設定音量為 50%
+        });
+
         const exportToPDF = () => {
             const report = document.getElementById('pdf-report');
             report.classList.remove('hidden');
@@ -470,7 +497,6 @@ const app = createApp({
                     }
                 });
                 
-                // 延遲執行以確保圖表渲染完成
                 setTimeout(() => {
                     window.print();
                     report.classList.add('hidden');
@@ -497,7 +523,7 @@ const app = createApp({
             currentTab, tabs, characters, vocabularies, cardFilter, filteredCards, toggleCard,
             showTranslation, storyParagraphs, highlightVocab, highlightVocabZh, speakingIndex, speak,
             studentName, quiz, quizAnswers, quizSubmitted, score, submitQuiz, resetQuiz,
-            showStats, performanceStats, exportToPDF
+            showStats, performanceStats, exportToPDF, isMusicPlaying, toggleMusic
         };
     }
 });
