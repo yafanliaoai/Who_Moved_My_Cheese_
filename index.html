@@ -43,6 +43,32 @@
         }
         .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
         .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+        /* PDF 列印模式優化 */
+        @media print {
+            header, footer, nav, button, .no-print {
+                display: none !important;
+            }
+            body {
+                background-color: white !important;
+                padding: 0 !important;
+            }
+            .print-container {
+                display: block !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 20px !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+            canvas {
+                max-width: 400px !important;
+                height: auto !important;
+            }
+        }
     </style>
 </head>
 <body class="text-gray-800 antialiased min-h-screen flex flex-col">
@@ -153,7 +179,6 @@
         <transition name="fade" mode="out-in">
             <div v-if="currentTab === 'reading'" class="space-y-6">
                 <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
-                    <!-- 附件頂欄風格 -->
                     <div class="bg-[#1e293b] p-6 text-white flex justify-between items-center">
                         <div>
                             <h2 class="text-2xl font-black text-amber-400">The Great Adventure</h2>
@@ -164,10 +189,8 @@
                         </button>
                     </div>
                     
-                    <!-- 閱讀內容 (對標附件佈局) -->
                     <div class="p-8 md:p-12 space-y-12">
                         <div v-for="(paragraph, index) in storyParagraphs" :key="index" class="flex gap-6 items-start">
-                            <!-- 播放按鈕 (附件風格：圓形黃色圖示) -->
                             <button @click="speak(paragraph.en, index)" 
                                     class="mt-1 w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex-shrink-0 flex items-center justify-center shadow-sm hover:bg-amber-200 transition-all" 
                                     :class="{ 'is-speaking ring-2 ring-amber-500': speakingIndex === index }">
@@ -192,7 +215,7 @@
         <!-- 肆、 隨堂測驗 -->
         <transition name="fade" mode="out-in">
             <div v-if="currentTab === 'quiz'" class="space-y-8 max-w-3xl mx-auto">
-                <div class="bg-white p-6 rounded-2xl shadow-md border-t-4 border-amber-500 flex flex-col md:flex-row items-center gap-4">
+                <div class="bg-white p-6 rounded-2xl shadow-md border-t-4 border-amber-500 flex flex-col md:flex-row items-center gap-4 no-print">
                     <div class="flex items-center gap-3">
                         <div class="bg-amber-100 p-3 rounded-full text-amber-600"><i class="fa-solid fa-signature"></i></div>
                         <label class="font-black text-amber-900">測驗者姓名：</label>
@@ -201,7 +224,7 @@
                            class="flex-grow px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-amber-500 focus:outline-none font-bold">
                 </div>
 
-                <div v-for="(q, index) in quiz" :key="index" class="bg-white p-6 md:p-8 rounded-2xl shadow-md border transition-all"
+                <div v-for="(q, index) in quiz" :key="index" class="bg-white p-6 md:p-8 rounded-2xl shadow-md border transition-all no-print"
                      :class="quizSubmitted ? (quizAnswers[index] === q.ans ? 'border-green-500 bg-green-50/30' : 'border-red-200') : 'border-gray-100'">
                     <div class="flex items-center gap-2 mb-4">
                         <span class="bg-amber-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">{{ index + 1 }}</span>
@@ -218,7 +241,7 @@
                     </div>
                 </div>
 
-                <div class="text-center pt-6">
+                <div class="text-center pt-6 no-print">
                     <button v-if="!quizSubmitted" @click="submitQuiz" :disabled="!studentName || Object.keys(quizAnswers).length < quiz.length"
                             class="bg-orange-600 text-white font-black text-xl px-12 py-4 rounded-full shadow-lg disabled:opacity-50 hover:bg-orange-700 transition-colors">
                         提交測驗結果
@@ -231,9 +254,60 @@
                         
                         <div class="flex flex-col sm:flex-row gap-4 justify-center">
                             <button @click="showStats = true" class="bg-blue-600 text-white font-bold px-8 py-3 rounded-xl"><i class="fa-solid fa-chart-pie mr-2"></i>成效分析</button>
-                            <button @click="downloadEvidence" class="bg-emerald-600 text-white font-bold px-8 py-3 rounded-xl"><i class="fa-solid fa-file-export mr-2"></i>下載佐證</button>
+                            <button @click="exportToPDF" class="bg-emerald-600 text-white font-bold px-8 py-3 rounded-xl"><i class="fa-solid fa-file-pdf mr-2"></i>下載 PDF 報告</button>
                             <button @click="resetQuiz" class="bg-gray-100 text-gray-600 font-bold px-8 py-3 rounded-xl">重新測驗</button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- 隱藏的 PDF 列印容器 -->
+                <div id="pdf-report" class="hidden print-container bg-white p-12 text-gray-800">
+                    <div class="border-b-4 border-amber-500 pb-6 mb-8 flex justify-between items-end">
+                        <div>
+                            <h1 class="text-4xl font-black text-gray-900 mb-2">學習成效報告</h1>
+                            <p class="text-gray-500 font-bold">Who Moved My Cheese - Reading Assessment</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-bold text-gray-400 uppercase">Assessment Date</p>
+                            <p class="text-lg font-black">{{ new Date().toLocaleDateString() }}</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-12 mb-12">
+                        <div class="bg-gray-50 p-8 rounded-3xl">
+                            <p class="text-gray-400 font-bold mb-1 uppercase text-xs tracking-widest">Student Name</p>
+                            <p class="text-3xl font-black mb-6 border-b-2 border-gray-200 pb-2">{{ studentName }}</p>
+                            
+                            <p class="text-gray-400 font-bold mb-1 uppercase text-xs tracking-widest">Overall Score</p>
+                            <p class="text-6xl font-black text-amber-500">{{ score }}<span class="text-xl text-gray-300 ml-2">pts</span></p>
+                        </div>
+                        <div class="flex items-center justify-center">
+                            <div class="text-center">
+                                <p class="text-gray-400 font-bold mb-4 uppercase text-xs tracking-widest">Ability Distribution</p>
+                                <canvas id="printChart" width="300" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6 mb-12">
+                        <h2 class="text-xl font-black border-l-8 border-blue-600 pl-4 mb-4">能力落點分析</h2>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div v-for="stat in performanceStats" class="p-4 border-2 border-gray-100 rounded-2xl flex justify-between items-center">
+                                <span class="font-bold text-gray-600">{{ stat.label }}</span>
+                                <span class="font-black text-blue-600 text-xl">{{ stat.score }}%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 p-8 rounded-3xl border-2 border-blue-100">
+                        <h2 class="text-blue-900 font-black mb-3"><i class="fa-solid fa-lightbulb mr-2"></i>教師輔導建議</h2>
+                        <p class="text-blue-800 leading-relaxed font-medium">
+                            {{ score >= 80 ? '該名學生已展現出色的文本理解能力，並能精確捕捉故事中的隱喻轉換。建議可以引導其撰寫英文短文評論，將「乳酪」的概念與其個人生活目標連結，進一步提升批判性思考能力。' : '學生對於基礎情節與角色特徵已有初步掌握，但在「隱喻理解」與「詞彙深度」上仍有進步空間。建議針對 Vocabulary 類別進行二次複習，並透過「預習小卡」加強對於 Maze 與 Adjustment 等核心概念的連結。' }}
+                        </p>
+                    </div>
+
+                    <div class="mt-20 pt-8 border-t border-gray-100 text-center text-gray-300 font-bold text-xs">
+                        Who Moved My Cheese Interactive Platform • System Generated Report
                     </div>
                 </div>
             </div>
@@ -241,7 +315,7 @@
     </main>
 
     <!-- 分析 Modal -->
-    <div v-if="showStats" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div v-if="showStats" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm no-print">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden">
             <div class="bg-blue-600 p-6 text-white flex justify-between items-center">
                 <h3 class="text-xl font-bold">學習能力數據落點</h3>
@@ -265,7 +339,7 @@
         </div>
     </div>
 
-    <footer class="bg-gray-100 text-gray-400 text-center py-6 text-xs font-bold uppercase tracking-widest">
+    <footer class="bg-gray-100 text-gray-400 text-center py-6 text-xs font-bold uppercase tracking-widest no-print">
         Who Moved My Cheese - Learning Platform Concept
     </footer>
 </div>
@@ -285,6 +359,7 @@ const app = createApp({
         const score = ref(0);
         const showStats = ref(false);
         let chartInstance = null;
+        let printChartInstance = null;
 
         const tabs = [
             { id: 'intro', name: '角色與字彙', icon: 'fa-solid fa-address-card' },
@@ -293,7 +368,6 @@ const app = createApp({
             { id: 'quiz', name: '隨堂測驗', icon: 'fa-solid fa-check-double' }
         ];
 
-        // 附件資料
         const characters = [
             { name: 'Sniff', zh: '嗅嗅', desc: '敏銳的觀察者，總是第一個發現環境變化。', attitude: '警覺 ：樂於及早察覺改變的徵兆。', colorClass: 'border-blue-400' },
             { name: 'Scurry', zh: '匆匆', desc: '行動力強，總能在發現狀況後立即付諸行動。', attitude: '積極 ：願意立刻採取行動去適應。', colorClass: 'border-green-400' },
@@ -326,7 +400,6 @@ const app = createApp({
         const filteredCards = computed(() => cardFilter.value === 'all' ? baseCards.value : baseCards.value.filter(c => c.type === cardFilter.value));
         const toggleCard = (idx) => filteredCards.value[idx].flipped = !filteredCards.value[idx].flipped;
 
-        // 完整故事內容 (根據學習單文字)
         const storyParagraphs = [
             { en: 'Once upon a time, in a big Maze, there lived four little friends. Two were mice named Sniff and Scurry, and two were little people named Hem and Haw. Every day, they ran through the dark halls to find their favorite Cheese.', zh: '很久以前，在一個巨大的 迷宮 裡，住著四個小夥伴。兩隻是名叫 嗅嗅 和 匆匆 的老鼠，另外兩位是名叫 哼哼 和 哈哈 的小矮人。每天，他們都會跑過陰暗的長廊，尋找他們最愛的 乳酪 。' },
             { en: 'One morning, they arrived at "Cheese Station C" and found it empty! The Cheese was gone.', zh: '有一天早上，他們抵達「乳酪C站」，卻發現那裡空空如也！ 乳酪 不見了。' },
@@ -371,19 +444,38 @@ const app = createApp({
 
         const resetQuiz = () => { quizAnswers.value = {}; quizSubmitted.value = false; score.value = 0; showStats.value = false; };
 
-        const downloadEvidence = () => {
-            const date = new Date().toLocaleDateString();
-            const content = `<html><body style="font-family:sans-serif; padding:50px;">
-                <h1>Who Moved My Cheese 學習佐證</h1>
-                <p>學生姓名：${studentName.value}</p>
-                <p>測驗日期：${date}</p>
-                <p>測驗得分：${score.value} / 100</p>
-                <h2>分項表現：</h2>
-                <ul>${performanceStats.value.map(s => `<li>${s.label}: ${s.score}%</li>`).join('')}</ul>
-                </body></html>`;
-            const blob = new Blob([content], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `${studentName.value}_學習佐證.html`; a.click();
+        const exportToPDF = () => {
+            const report = document.getElementById('pdf-report');
+            report.classList.remove('hidden');
+            
+            nextTick(() => {
+                const ctx = document.getElementById('printChart');
+                if (printChartInstance) printChartInstance.destroy();
+                printChartInstance = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: performanceStats.value.map(s => s.label),
+                        datasets: [{ 
+                            data: performanceStats.value.map(s => s.score), 
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)', 
+                            borderColor: 'rgb(59, 130, 246)', 
+                            pointBackgroundColor: 'rgb(59, 130, 246)',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: { 
+                        animation: false,
+                        scales: { r: { suggestMin: 0, suggestMax: 100, ticks: { display: false } } }, 
+                        plugins: { legend: { display: false } } 
+                    }
+                });
+                
+                // 延遲執行以確保圖表渲染完成
+                setTimeout(() => {
+                    window.print();
+                    report.classList.add('hidden');
+                }, 500);
+            });
         };
 
         watch(showStats, (v) => {
@@ -405,7 +497,7 @@ const app = createApp({
             currentTab, tabs, characters, vocabularies, cardFilter, filteredCards, toggleCard,
             showTranslation, storyParagraphs, highlightVocab, highlightVocabZh, speakingIndex, speak,
             studentName, quiz, quizAnswers, quizSubmitted, score, submitQuiz, resetQuiz,
-            showStats, performanceStats, downloadEvidence
+            showStats, performanceStats, exportToPDF
         };
     }
 });
