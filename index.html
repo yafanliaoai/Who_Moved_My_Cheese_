@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Who Moved My Cheese 英文閱讀探索學習平台</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #FFFBEB; /* bg-yellow-50 */
+        }
+        
+        /* 翻轉卡片特效 CSS */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+        .card-container:hover .transform-style-3d {
+            /* Optional hover effect */
+        }
+        
+        /* 隱藏卷軸但保留功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* 自訂核取方塊與單選框顏色 */
+        input[type="radio"]:checked + label {
+            border-color: #F59E0B; /* amber-500 */
+            background-color: #FEF3C7; /* amber-50 */
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased min-h-screen flex flex-col">
+
+<div id="app" class="flex-grow flex flex-col h-full">
+    <!-- 導覽列與標題 -->
+    <header class="bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg text-white sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 py-6 text-center">
+            <h1 class="text-2xl md:text-4xl font-black mb-2 tracking-wide text-white drop-shadow-md">
+                <i class="fa-solid fa-cheese mr-2"></i>Who Moved My Cheese
+            </h1>
+            <p class="text-sm md:text-lg font-medium opacity-90">英文閱讀探索自主學習平台</p>
+        </div>
+        
+        <!-- 導覽分頁按鈕 -->
+        <div class="flex overflow-x-auto no-scrollbar bg-orange-600/20 px-2 justify-start md:justify-center">
+            <button v-for="tab in tabs" :key="tab.id" @click="currentTab = tab.id"
+                class="whitespace-nowrap px-4 py-3 md:px-6 md:py-4 text-sm md:text-base font-bold transition-all duration-300 border-b-4 focus:outline-none flex items-center gap-2"
+                :class="currentTab === tab.id ? 'border-white text-white bg-white/10' : 'border-transparent text-white/70 hover:text-white hover:bg-white/5'">
+                <i :class="tab.icon"></i> {{ tab.name }}
+            </button>
+        </div>
+    </header>
+
+    <!-- 主內容區 -->
+    <main class="flex-grow max-w-5xl mx-auto w-full p-4 md:p-6 pb-20">
+        
+        <!-- 壹、 角色與字彙圖鑑 -->
+        <transition name="fade" mode="out-in">
+            <div v-if="currentTab === 'intro'" class="space-y-8 animate-[fadeIn_0.5s_ease-out]">
+                <!-- 角色介紹 -->
+                <section>
+                    <div class="flex items-center gap-3 mb-6 border-b-2 border-amber-200 pb-2">
+                        <div class="bg-amber-100 p-3 rounded-full text-amber-600">
+                            <i class="fa-solid fa-users text-xl"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-amber-900">書中四位主要角色分析</h2>
+                    </div>
+                    <p class="text-gray-600 mb-6 bg-white p-4 rounded-lg shadow-sm border border-amber-100">
+                        <i class="fa-solid fa-lightbulb text-amber-500 mr-2"></i>這些角色代表了我們內心不同的面向，面對改變時，你會是哪一個呢？
+                    </p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div v-for="char in characters" :key="char.name" class="bg-white rounded-xl shadow-md p-5 border-t-4 hover:shadow-lg transition-shadow duration-300 flex flex-col" :class="char.colorClass">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 class="text-2xl font-black text-gray-800">{{ char.name }}</h3>
+                                    <p class="text-sm font-bold text-gray-500">{{ char.zh }}</p>
+                                </div>
+                                <i :class="char.icon" class="text-3xl opacity-80"></i>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4 flex-grow">{{ char.desc }}</p>
+                            <div class="bg-gray-50 p-3 rounded-lg text-sm border">
+                                <span class="font-bold block mb-1">面對改變的態度：</span>
+                                <span class="text-gray-800 font-medium">{{ char.attitude }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 關鍵單字 -->
+                <section>
+                    <div class="flex items-center gap-3 mb-6 border-b-2 border-amber-200 pb-2 mt-10">
+                        <div class="bg-amber-100 p-3 rounded-full text-amber-600">
+                            <i class="fa-solid fa-book-open text-xl"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-amber-900">六個關鍵單字與隱喻</h2>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-amber-50 text-amber-900 border-b-2 border-amber-200">
+                                        <th class="p-4 font-bold">單字 (Word)</th>
+                                        <th class="p-4 font-bold">隱喻 / 特徵</th>
+                                        <th class="p-4 font-bold">核心概念 (Key Concept)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(vocab, index) in vocabularies" :key="vocab.word" class="border-b border-gray-100 hover:bg-amber-50/50 transition-colors" :class="{'bg-gray-50': index % 2 === 1}">
+                                        <td class="p-4">
+                                            <div class="font-black text-lg text-orange-600">{{ vocab.word }}</div>
+                                            <div class="text-sm text-gray-500 font-bold">{{ vocab.zh }}</div>
+                                        </td>
+                                        <td class="p-4 text-gray-700">{{ vocab.desc }}</td>
+                                        <td class="p-4 text-gray-700 font-medium">{{ vocab.concept }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </transition>
+
+        <!-- 貳、 互動預習小卡 -->
+        <transition name="fade" mode="out-in">
+            <div v-if="currentTab === 'cards'" class="space-y-8 animate-[fadeIn_0.5s_ease-out]">
+                <div class="text-center max-w-2xl mx-auto mb-8 bg-white p-6 rounded-xl shadow-sm border border-amber-100">
+                    <h2 class="text-2xl font-bold text-amber-900 mb-2">互動預習小卡</h2>
+                    <p class="text-gray-600">點擊卡片即可翻面！先看英文回想中文意思，幫助閱讀前快速熟悉單字與角色。</p>
+                    
+                    <!-- 篩選按鈕 -->
+                    <div class="flex justify-center gap-4 mt-4">
+                        <button @click="cardFilter = 'all'" class="px-4 py-2 rounded-full text-sm font-bold transition-colors" :class="cardFilter === 'all' ? 'bg-amber-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">全部</button>
+                        <button @click="cardFilter = 'character'" class="px-4 py-2 rounded-full text-sm font-bold transition-colors" :class="cardFilter === 'character' ? 'bg-amber-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">角色篇</button>
+                        <button @click="cardFilter = 'vocab'" class="px-4 py-2 rounded-full text-sm font-bold transition-colors" :class="cardFilter === 'vocab' ? 'bg-amber-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">單字篇</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div v-for="(card, index) in filteredCards" :key="index" 
+                         class="perspective-1000 w-full h-64 cursor-pointer"
+                         @click="toggleCard(index)">
+                        <div class="relative w-full h-full transform-style-3d" :class="{ 'rotate-y-180': card.flipped }">
+                            
+                            <!-- 卡片正面 (英文) -->
+                            <div class="absolute w-full h-full backface-hidden bg-white border-2 border-amber-200 rounded-2xl shadow-lg flex flex-col items-center justify-center p-6 text-center">
+                                <span class="absolute top-4 right-4 text-amber-300 opacity-50"><i class="fa-solid fa-hand-pointer"></i> 點擊翻面</span>
+                                <div class="text-amber-500 mb-4 text-4xl">
+                                    <i :class="card.type === 'character' ? 'fa-solid fa-user-astronaut' : 'fa-solid fa-spell-check'"></i>
+                                </div>
+                                <h3 class="text-3xl font-black text-gray-800 tracking-wide">{{ card.front }}</h3>
+                                <p class="mt-4 text-sm font-bold text-gray-400 bg-gray-100 px-3 py-1 rounded-full uppercase tracking-wider">{{ card.type === 'character' ? 'Character' : 'Vocabulary' }}</p>
+                            </div>
+                            
+                            <!-- 卡片背面 (中文與解釋) -->
+                            <div class="absolute w-full h-full backface-hidden bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-2xl shadow-lg flex flex-col items-center justify-center p-6 text-center rotate-y-180">
+                                <h3 class="text-2xl font-bold mb-2">{{ card.backTitle }}</h3>
+                                <div class="w-12 h-1 bg-white/50 rounded mb-4"></div>
+                                <p class="text-base md:text-lg font-medium leading-relaxed drop-shadow-sm">{{ card.backDesc }}</p>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <!-- 參、 閱讀探險 -->
+        <transition name="fade" mode="out-in">
+            <div v-if="currentTab === 'reading'" class="space-y-6 animate-[fadeIn_0.5s_ease-out]">
+                
+                <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-amber-100">
+                    <!-- 閱讀標頭 -->
+                    <div class="bg-slate-800 p-6 text-white flex justify-between items-center flex-wrap gap-4">
+                        <div>
+                            <h2 class="text-2xl md:text-3xl font-black mb-1 text-amber-400">The Great Adventure</h2>
+                            <p class="text-lg text-gray-300">Who Took My Happy Meal?</p>
+                        </div>
+                        <button @click="showTranslation = !showTranslation" 
+                                class="bg-white/20 hover:bg-white/30 text-white px-5 py-2.5 rounded-full font-bold transition-all flex items-center gap-2 backdrop-blur-sm">
+                            <i class="fa-solid fa-language text-xl"></i>
+                            {{ showTranslation ? '隱藏中文翻譯' : '顯示雙語對照' }}
+                        </button>
+                    </div>
+
+                    <!-- 閱讀內容 -->
+                    <div class="p-6 md:p-10 text-lg leading-relaxed text-gray-800 space-y-8">
+                        <div v-for="(paragraph, index) in storyParagraphs" :key="index" class="relative">
+                            <!-- 英文段落 -->
+                            <p class="font-medium" v-html="highlightVocab(paragraph.en)"></p>
+                            
+                            <!-- 中文翻譯段落 (透過動畫展開) -->
+                            <div v-show="showTranslation" class="mt-4 bg-amber-50/80 p-5 rounded-xl border-l-4 border-amber-400 text-gray-700 text-base">
+                                <p v-html="highlightVocabZh(paragraph.zh)"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <!-- 肆、 隨堂測驗 -->
+        <transition name="fade" mode="out-in">
+            <div v-if="currentTab === 'quiz'" class="space-y-8 animate-[fadeIn_0.5s_ease-out]">
+                
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-amber-100 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-amber-900 mb-1">閱讀理解測驗 (Comprehension Quiz)</h2>
+                        <p class="text-gray-600">測試你對故事內容與字彙的理解，完成後點擊提交觀看解析！</p>
+                    </div>
+                    <div class="hidden md:block text-5xl text-amber-200">
+                        <i class="fa-solid fa-clipboard-question"></i>
+                    </div>
+                </div>
+
+                <div class="space-y-8">
+                    <div v-for="(q, index) in quiz" :key="index" 
+                         class="bg-white p-6 md:p-8 rounded-2xl shadow-md border border-gray-100 relative transition-all"
+                         :class="{ 'ring-4 ring-green-400 border-transparent': quizSubmitted && quizAnswers[index] === q.ans, 
+                                   'ring-4 ring-red-400 border-transparent': quizSubmitted && quizAnswers[index] && quizAnswers[index] !== q.ans }">
+                        
+                        <!-- 題號與標籤 -->
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="bg-amber-500 text-white font-black w-8 h-8 rounded-full flex items-center justify-center shadow-inner">{{ index + 1 }}</span>
+                            <span class="text-xs font-bold bg-gray-100 text-gray-500 px-3 py-1 rounded-full tracking-wide">{{ q.type }}</span>
+                        </div>
+                        
+                        <!-- 題目 -->
+                        <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-6" v-html="highlightVocab(q.question)"></h3>
+                        
+                        <!-- 選項 -->
+                        <div class="space-y-3">
+                            <label v-for="(optionText, optionKey) in q.options" :key="optionKey" 
+                                   class="block relative border-2 border-gray-100 rounded-xl p-4 cursor-pointer transition-all hover:bg-gray-50"
+                                   :class="{ 
+                                     'border-amber-500 bg-amber-50': quizAnswers[index] === optionKey && !quizSubmitted,
+                                     'border-green-500 bg-green-50': quizSubmitted && optionKey === q.ans,
+                                     'border-red-300 bg-red-50 opacity-70': quizSubmitted && quizAnswers[index] === optionKey && optionKey !== q.ans,
+                                     'opacity-50 pointer-events-none': quizSubmitted && optionKey !== q.ans && quizAnswers[index] !== optionKey
+                                   }">
+                                <div class="flex items-start gap-4">
+                                    <input type="radio" :name="'question_'+index" :value="optionKey" v-model="quizAnswers[index]" :disabled="quizSubmitted" class="mt-1 w-5 h-5 text-amber-600 focus:ring-amber-500 border-gray-300">
+                                    <div class="flex-grow">
+                                        <span class="font-bold mr-2 text-gray-500">({{ optionKey }})</span>
+                                        <span class="text-gray-700 font-medium" :class="{'text-green-800 font-bold': quizSubmitted && optionKey === q.ans}">{{ optionText }}</span>
+                                    </div>
+                                    <!-- 正確/錯誤圖示 -->
+                                    <div v-if="quizSubmitted && optionKey === q.ans" class="text-green-500 text-xl"><i class="fa-solid fa-circle-check"></i></div>
+                                    <div v-if="quizSubmitted && quizAnswers[index] === optionKey && optionKey !== q.ans" class="text-red-500 text-xl"><i class="fa-solid fa-circle-xmark"></i></div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 提交按鈕與結果區塊 -->
+                <div class="text-center pt-6 pb-10">
+                    <button v-if="!quizSubmitted" @click="submitQuiz" :disabled="Object.keys(quizAnswers).length < quiz.length"
+                            class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xl px-10 py-4 rounded-full shadow-lg transform transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+                        <i class="fa-solid fa-paper-plane mr-2"></i> 提交答案看結果
+                    </button>
+                    <p v-if="!quizSubmitted && Object.keys(quizAnswers).length < quiz.length" class="text-red-500 text-sm mt-3 font-bold">
+                        * 請回答完所有問題再提交喔！(已作答 {{ Object.keys(quizAnswers).length }} / {{ quiz.length }})
+                    </p>
+
+                    <!-- 結果彈出小視窗 (頁面內) -->
+                    <div v-if="quizSubmitted" class="bg-white p-8 rounded-2xl shadow-2xl border-4 border-amber-400 max-w-xl mx-auto transform transition-all animate-[fadeInUp_0.5s_ease-out]">
+                        <h3 class="text-3xl font-black mb-2 text-gray-800">測驗結果</h3>
+                        <div class="text-6xl font-black my-6 text-amber-500">
+                            {{ score }} <span class="text-2xl text-gray-500">/ 100</span>
+                        </div>
+                        <p class="text-lg text-gray-600 font-bold mb-6">
+                            {{ getFeedbackMessage() }}
+                        </p>
+                        <button @click="resetQuiz" class="bg-gray-800 hover:bg-gray-900 text-white font-bold px-8 py-3 rounded-full transition-colors">
+                            <i class="fa-solid fa-rotate-right mr-2"></i> 再測驗一次
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </transition>
+        
+    </main>
+
+    <!-- 頁腳 -->
+    <footer class="bg-gray-800 text-gray-400 text-center py-6 text-sm">
+        <p>© 2026 英文閱讀探索學習單. Crafted for Interactive Learning.</p>
+    </footer>
+</div>
+
+<script>
+    const { createApp, ref, computed } = Vue;
+
+    const app = createApp({
+        setup() {
+            const currentTab = ref('intro'); // intro, cards, reading, quiz
+            const showTranslation = ref(false);
+            const cardFilter = ref('all');
+            
+            // 測驗狀態
+            const quizAnswers = ref({});
+            const quizSubmitted = ref(false);
+            const score = ref(0);
+
+            // 資料區：頁籤
+            const tabs = [
+                { id: 'intro', name: '角色與字彙', icon: 'fa-solid fa-address-book' },
+                { id: 'cards', name: '預習小卡', icon: 'fa-solid fa-layer-group' },
+                { id: 'reading', name: '閱讀探險', icon: 'fa-solid fa-book-open-reader' },
+                { id: 'quiz', name: '隨堂測驗', icon: 'fa-solid fa-list-check' }
+            ];
+
+            // 資料區：角色
+            const characters = [
+                { name: 'Sniff', zh: '嗅嗅', desc: '敏銳的觀察者，總是第一個發現環境變化。', attitude: '警覺：樂於及早察覺改變的徵兆。', icon: 'fa-solid fa-magnifying-glass', colorClass: 'border-blue-400' },
+                { name: 'Scurry', zh: '匆匆', desc: '行動力強，總能在發現狀況後立即付諸行動。', attitude: '積極：願意立刻採取行動去適應。', icon: 'fa-solid fa-person-running', colorClass: 'border-green-400' },
+                { name: 'Hem', zh: '哼哼', desc: '固執且充滿恐懼，總是責怪環境對他不公。', attitude: '抗拒：深陷恐懼，拒絕承認改變已發生。', icon: 'fa-solid fa-hands-bound', colorClass: 'border-red-400' },
+                { name: 'Haw', zh: '哈哈', desc: '原本也固執，但後來學會自我調整並擁抱改變。', attitude: '學習：透過反思，從改變中獲得成長。', icon: 'fa-solid fa-lightbulb', colorClass: 'border-amber-400' }
+            ];
+
+            // 資料區：字彙
+            const vocabularies = [
+                { word: 'Maze', zh: '迷宮', desc: '我們工作與生活的複雜環境。', concept: '隱喻人生充滿未知與挑戰。' },
+                { word: 'Cheese', zh: '乳酪', desc: '我們追求的目標（如工作、錢、幸福）。', concept: '我們認為能帶來快樂與安全感的東西。' },
+                { word: 'Change', zh: '改變', desc: '環境中必然發生的變動。', concept: '變化是必然的，且持續發生。' },
+                { word: 'Fear', zh: '恐懼', desc: '阻礙我們前進的心魔。', concept: '恐懼讓我們原地踏步。' },
+                { word: 'Belief', zh: '信念', desc: '我們內心對現狀的認知。', concept: '我們的「觀點」決定了我們會如何行動。' },
+                { word: 'Adjustment', zh: '調整', desc: '適應新環境的能力。', concept: '及時調整心態，才能發現新的乳酪。' }
+            ];
+
+            // 資料區：建立預習小卡陣列
+            const baseCards = ref([]);
+            
+            // 初始化小卡資料
+            characters.forEach(c => {
+                baseCards.value.push({
+                    type: 'character',
+                    front: c.name,
+                    backTitle: `${c.name} (${c.zh})`,
+                    backDesc: `${c.attitude.split('：')[0]}者 - ${c.desc}`,
+                    flipped: false
+                });
+            });
+            vocabularies.forEach(v => {
+                baseCards.value.push({
+                    type: 'vocab',
+                    front: v.word,
+                    backTitle: `${v.word} (${v.zh})`,
+                    backDesc: v.desc,
+                    flipped: false
+                });
+            });
+
+            // 運算屬性：篩選小卡
+            const filteredCards = computed(() => {
+                if (cardFilter.value === 'all') return baseCards.value;
+                return baseCards.value.filter(card => card.type === cardFilter.value);
+            });
+
+            // 翻轉卡片方法
+            const toggleCard = (index) => {
+                // Because of filtering, finding the exact card in the base array needs correct reference.
+                // Computed properties return a proxy to the actual objects, so we can modify it directly.
+                filteredCards.value[index].flipped = !filteredCards.value[index].flipped;
+            };
+
+            // 資料區：故事
+            const storyParagraphs = [
+                {
+                    en: 'Once upon a time, in a big Maze, there lived four little friends. Two were mice named Sniff and Scurry, and two were little people named Hem and Haw. Every day, they ran through the dark halls to find their favorite Cheese.',
+                    zh: '很久以前，在一個巨大的 迷宮 裡，住著四個小夥伴。兩隻是名叫 嗅嗅 和 匆匆 的老鼠，另外兩位是名叫 哼哼 和 哈哈 的小矮人。每天，他們都會跑過陰暗的長廊，尋找他們最愛的 乳酪 。'
+                },
+                {
+                    en: 'One morning, they arrived at "Cheese Station C" and found it empty! The Cheese was gone.',
+                    zh: '有一天早上，他們抵達「乳酪C站」，卻發現那裡空空如也！ 乳酪 不見了。'
+                },
+                {
+                    en: 'Sniff and Scurry were not surprised. Sniff used his big nose to Sniff the air, and Scurry started running immediately. They knew that Change happens, so they didn\'t waste time complaining. They put on their running shoes and went back into the Maze to look for new snacks.',
+                    zh: '嗅嗅 和 匆匆 並不驚訝。 嗅嗅 用他的大鼻子嗅了嗅空氣，而 匆匆 立即開始奔跑。他們知道 改變 總會發生，所以沒有浪費時間抱怨。他們穿上跑步鞋，重新回到 迷宮 中尋找新的零食。'
+                },
+                {
+                    en: 'However, Hem and Haw were very upset. Hem shouted, "It’s not fair! Who moved my Cheese?" He was full of Fear and didn\'t want to leave. He thought the old Cheese would come back. Haw was also afraid at first, but then he started to laugh at himself. He realized that staying in an empty station was a bad Belief.',
+                    zh: '然而， 哼哼 和 哈哈 非常沮喪。 哼哼 大喊：「這不公平！誰搬走了我的 乳酪 ？」他內心充滿了 恐懼 ，不想離開。他認為舊的 乳酪 會回來。 哈哈 起初也很害怕，但隨後他開始嘲笑自己。他意識到待在一個空的車站是一個錯誤的 信念 。'
+                },
+                {
+                    en: 'Haw took a deep breath and made an Adjustment. He wrote on the wall: "If you are not afraid, what would you do?" Then, he ran into the Maze. It was scary, but he felt better because he was moving. Finally, he found a new place called "Cheese Station N," where Sniff and Scurry were already eating the best Cheese ever!',
+                    zh: '哈哈 深吸一口氣，做出了一個 調整 。他在牆上寫下：「如果你不恐懼，你會怎麼做？」接著，他跑進了 迷宮 。雖然很可怕，但他感覺好多了，因為他在前進。最後，他找到了一個名為「乳酪N站」的新地方， 嗅嗅 和 匆匆 早就在那裡吃著有史以來最棒的 乳酪 了！'
+                }
+            ];
+
+            // 替重點單字加上顏色與粗體
+            const keyTermsEn = ['Maze', 'Cheese', 'Change', 'Fear', 'Belief', 'Adjustment', 'Sniff', 'Scurry', 'Hem', 'Haw'];
+            const keyTermsZh = ['迷宮', '乳酪', '改變', '恐懼', '信念', '調整', '嗅嗅', '匆匆', '哼哼', '哈哈'];
+
+            const highlightVocab = (text) => {
+                let result = text;
+                keyTermsEn.forEach(term => {
+                    const regex = new RegExp(`\\b${term}\\b`, 'g');
+                    result = result.replace(regex, `<span class="text-orange-600 font-black tracking-wide">${term}</span>`);
+                });
+                return result;
+            };
+            const highlightVocabZh = (text) => {
+                let result = text;
+                keyTermsZh.forEach(term => {
+                    const regex = new RegExp(`${term}`, 'g');
+                    result = result.replace(regex, `<span class="text-orange-600 font-bold bg-orange-100/50 px-1 rounded">${term}</span>`);
+                });
+                return result;
+            };
+
+            // 資料區：測驗
+            const quiz = [
+                {
+                    type: 'Vocabulary',
+                    question: 'In the story, what does Fear mostly cause people to do?',
+                    options: {
+                        'A': 'It makes people run faster into the Maze.',
+                        'B': 'It stops people from moving or trying new things.',
+                        'C': 'It helps people find new Cheese more quickly.',
+                        'D': 'It makes people laugh at their own mistakes.'
+                    },
+                    ans: 'B'
+                },
+                {
+                    type: 'Detail',
+                    question: 'Why were Sniff and Scurry able to find "Cheese Station N" before the others?',
+                    options: {
+                        'A': 'They were lucky and found it by accident.',
+                        'B': 'They waited at Station C for the Cheese to return.',
+                        'C': 'They accepted Change quickly and started looking immediately.',
+                        'D': 'They asked Hem and Haw for directions.'
+                    },
+                    ans: 'C'
+                },
+                {
+                    type: 'Main Idea',
+                    question: 'What is the most important lesson of this story?',
+                    options: {
+                        'A': 'Only mice are smart enough to find food.',
+                        'B': 'It is better to wait for things to go back to the way they were.',
+                        'C': 'We should always carry running shoes in our bags.',
+                        'D': 'We must be ready for Change and move forward to find new success.'
+                    },
+                    ans: 'D'
+                },
+                {
+                    type: 'Inference',
+                    question: 'What can we infer about Haw at the end of the story?',
+                    options: {
+                        'A': 'He is still angry at Hem for staying at Station C.',
+                        'B': 'He is happier now because he learned to overcome his Fear.',
+                        'C': 'He found "Station N" but he still wants the old Cheese.',
+                        'D': 'He decided to stop running and wait for the mice to help him.'
+                    },
+                    ans: 'B'
+                },
+                {
+                    type: 'Vocabulary',
+                    question: 'Which of the following is an example of an Adjustment?',
+                    options: {
+                        'A': 'Doing the same thing every day and expecting a different result.',
+                        'B': 'Crying and waiting for someone to bring the Cheese back.',
+                        'C': 'Changing your plan or behavior to fit a new situation.',
+                        'D': 'Ignoring the problem and pretending nothing happened.'
+                    },
+                    ans: 'C'
+                }
+            ];
+
+            // 提交測驗
+            const submitQuiz = () => {
+                let correctCount = 0;
+                quiz.forEach((q, index) => {
+                    if (quizAnswers.value[index] === q.ans) {
+                        correctCount++;
+                    }
+                });
+                score.value = (correctCount / quiz.length) * 100;
+                quizSubmitted.value = true;
+                
+                // 滾動到結果區塊
+                setTimeout(() => {
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }, 100);
+            };
+
+            const resetQuiz = () => {
+                quizAnswers.value = {};
+                quizSubmitted.value = false;
+                score.value = 0;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            const getFeedbackMessage = () => {
+                if (score.value === 100) return "太棒了！你完全掌握了這個故事的核心精神，就像 嗅嗅、匆匆 還有 哈哈 一樣勇於面對改變！";
+                if (score.value >= 80) return "非常好！你對內容有很棒的理解，只差一點點就完美囉！";
+                if (score.value >= 60) return "不錯喔！你抓到了部分重點，建議可以回「閱讀探險」搭配翻譯再看一次！";
+                return "沒關係！面對陌生的迷宮難免會迷路。多看幾次預習小卡和中文翻譯，再挑戰一次吧！";
+            };
+
+            return {
+                currentTab, tabs,
+                characters, vocabularies,
+                cardFilter, filteredCards, toggleCard,
+                showTranslation, storyParagraphs, highlightVocab, highlightVocabZh,
+                quiz, quizAnswers, quizSubmitted, score, submitQuiz, resetQuiz, getFeedbackMessage
+            };
+        }
+    });
+
+    app.mount('#app');
+</script>
+</body>
+</html>
